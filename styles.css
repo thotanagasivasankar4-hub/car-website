@@ -1,0 +1,1253 @@
+/* ==========================================================================
+   NOCTIS — DESIGN SYSTEM & TOKENS
+   Mood: Total blackout. The car's light is the only light in the world.
+   Strict Rules: Flat solid colors only. 1px hairlines. Photography and type.
+   NO gradients, NO glassmorphism, NO blur, NO shadows, NO rounded bubbly cards.
+   ========================================================================== */
+
+:root {
+  /* Color Palette */
+  --asphalt: #07080A;
+  --graphite: #121418;
+  --fog: #8A8F98;
+  --bone: #EDEAE4;
+  --xenon: #CFE3FF;
+  --taillight: #E1251B;
+  --hairline: rgba(237, 234, 228, 0.12);
+  --hairline-solid: #1b1d22;
+
+  /* Typography */
+  --font-display: 'Archivo', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-hud: 'JetBrains Mono', monospace;
+
+  /* Universal Easing */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0; /* Strict: No rounded bubbly cards */
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--asphalt);
+  color: var(--bone);
+  overflow-x: clip; /* Strict: Never overflow:hidden on ancestors of sticky stages */
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Classes */
+.font-display {
+  font-family: var(--font-display);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+.font-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.6;
+  max-width: 52ch;
+  color: var(--fog);
+}
+
+.font-hud {
+  font-family: var(--font-hud);
+  font-weight: 400;
+  font-size: clamp(11px, 0.85vw, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+}
+
+/* Hide default cursor on desktop fine pointers */
+@media (pointer: fine) {
+  body:not(.reduced-motion) {
+    cursor: none;
+  }
+  body:not(.reduced-motion) a,
+  body:not(.reduced-motion) button,
+  body:not(.reduced-motion) [role="button"] {
+    cursor: none;
+  }
+}
+
+/* ==========================================================================
+   GRAIN OVERLAY (Fixed Offscreen Noise)
+   ========================================================================== */
+.grain-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 900;
+  opacity: 0.035; /* 3.5% opacity */
+}
+
+/* ==========================================================================
+   CUSTOM CURSOR ("THE HEADLIGHT")
+   ========================================================================== */
+.cursor-headlight {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  display: none;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+@media (pointer: fine) {
+  body:not(.reduced-motion) .cursor-headlight {
+    display: block;
+  }
+}
+
+/* State 1: Default Headlight (28px ring + 6px solid dot) */
+.cursor-ring {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--xenon);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.25s var(--ease), width 0.25s var(--ease), height 0.25s var(--ease);
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--xenon);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.2s var(--ease);
+}
+
+/* State 2: Hovered Light Bar (44x2px) + Mono Label */
+.cursor-bar {
+  width: 44px;
+  height: 2px;
+  background-color: var(--xenon);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease), background-color 0.12s ease;
+}
+
+.cursor-label {
+  position: absolute;
+  left: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-hud);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--xenon);
+  opacity: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+
+/* Active Hover Morph */
+.cursor-headlight.is-hovering .cursor-ring,
+.cursor-headlight.is-hovering .cursor-dot {
+  opacity: 0;
+}
+
+.cursor-headlight.is-hovering .cursor-bar,
+.cursor-headlight.is-hovering .cursor-label {
+  opacity: 1;
+}
+
+/* Mousedown click flash (turns brighter #FFFFFF for 120ms) */
+.cursor-headlight.is-pressed .cursor-bar,
+.cursor-headlight.is-pressed .cursor-dot,
+.cursor-headlight.is-pressed .cursor-ring {
+  background-color: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+/* ==========================================================================
+   PRELOADER
+   ========================================================================== */
+.preloader {
+  position: fixed;
+  inset: 0;
+  background-color: var(--asphalt);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.7s var(--ease), visibility 0.7s;
+}
+
+.is-loaded .preloader {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 280px;
+  text-align: center;
+}
+
+.preloader-wordmark {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 0.2em;
+  color: var(--bone);
+  margin-bottom: 24px;
+}
+
+.preloader-line-track {
+  width: 240px;
+  height: 1px;
+  background-color: var(--hairline);
+  position: relative;
+  overflow: visible;
+  margin-bottom: 16px;
+}
+
+.preloader-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--xenon);
+  transform-origin: center;
+  transform: scaleX(0);
+  transition: transform 0.1s linear, background-color 0.12s ease;
+}
+
+.preloader-line.flash {
+  background-color: #FFFFFF;
+}
+
+.preloader-counter {
+  color: var(--fog);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+/* ==========================================================================
+   NAVIGATION
+   ========================================================================== */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 32px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 800;
+  background: transparent;
+  mix-blend-mode: difference;
+  transition: transform 0.5s var(--ease);
+}
+
+.site-header.is-hidden {
+  transform: translateY(-100%);
+}
+
+.nav-brand {
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 20px;
+  letter-spacing: 0.15em;
+  font-weight: 400;
+}
+
+.nav-links {
+  display: flex;
+  gap: 36px;
+}
+
+.nav-link {
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  transition: opacity 0.3s var(--ease);
+}
+
+.nav-link:hover {
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   PINNED SCROLLYTELLING ARCHITECTURE (HERO & DISMANTLE)
+   Sticky stage inside tall wrapper. No overflow:hidden on ancestors!
+   ========================================================================== */
+.scrolly-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.hero-wrapper {
+  height: 600vh; /* Controlled by CONFIG */
+}
+
+.dismantle-wrapper {
+  height: 350vh; /* Controlled by CONFIG */
+}
+
+.scrolly-stage {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden; /* Clips canvas inside the stage */
+  background-color: var(--asphalt);
+}
+
+.scrolly-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Blackout overlay over last 5% of Hero */
+.hero-blackout-fade {
+  position: absolute;
+  inset: 0;
+  background-color: var(--asphalt);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 1px Xenon Bottom Section Progress Line */
+.section-progress-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--hairline);
+  z-index: 50;
+}
+
+.section-progress-bar {
+  width: 100%;
+  height: 1px;
+  background-color: var(--xenon);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+/* ==========================================================================
+   HERO LEFT-EDGE HUD
+   ========================================================================== */
+.hero-hud {
+  position: absolute;
+  left: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--fog);
+  pointer-events: none;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hud-tick {
+  width: 8px;
+  height: 2px;
+  background-color: var(--taillight); /* Taillight red active tick */
+  display: inline-block;
+}
+
+.hud-separator {
+  width: 32px;
+  height: 1px;
+  background-color: var(--hairline);
+}
+
+.hud-telemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hud-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hud-label {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: rgba(138, 143, 152, 0.6);
+}
+
+#hud-chapter-val,
+#hud-speed-val,
+#hud-dist-val {
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   HERO CHAPTERS & HEADLINE MASKS
+   Placed in empty sky, never over the car
+   ========================================================================== */
+.hero-chapters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.hero-chapter {
+  position: absolute;
+  top: 14vh;
+  left: 12vw;
+  right: 12vw;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s var(--ease), visibility 0.5s;
+  pointer-events: none;
+}
+
+.hero-chapter.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Line reveal: overflow hidden mask with translateY slide */
+.chapter-line-mask {
+  overflow: hidden;
+  display: block;
+}
+
+.hero-brand-title {
+  font-size: clamp(48px, 9vw, 130px);
+  color: var(--bone);
+  font-weight: 300;
+  transform: translateY(0);
+  transition: transform 0.9s var(--ease);
+}
+
+.hero-brand-subtitle {
+  font-size: clamp(16px, 1.3vw, 20px);
+  color: var(--fog);
+  margin-top: 12px;
+  transform: translateY(0);
+  transition: transform 0.9s var(--ease) 0.08s;
+}
+
+.hero-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 36px;
+  color: var(--xenon);
+  font-size: 11px;
+}
+
+.hint-pulse-line {
+  width: 48px;
+  height: 1px;
+  background-color: var(--xenon);
+  animation: pulse-line 2s infinite ease-in-out;
+}
+
+@keyframes pulse-line {
+  0%, 100% { opacity: 0.3; transform: scaleX(0.7); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+.hero-chapter-heading {
+  font-size: clamp(36px, 5.5vw, 84px);
+  color: var(--bone);
+  font-weight: 300;
+  max-width: 24ch;
+  line-height: 1.1;
+}
+
+.hero-model-title {
+  font-size: clamp(56px, 10vw, 140px);
+  color: var(--bone);
+}
+
+.hero-specs-row {
+  color: var(--xenon);
+  font-size: clamp(11px, 0.9vw, 13px);
+  margin-top: 14px;
+}
+
+.hero-cta-link {
+  display: inline-block;
+  margin-top: 24px;
+  color: var(--bone);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--xenon);
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.hero-cta-link:hover {
+  color: var(--xenon);
+}
+
+/* ==========================================================================
+   SECTION 2 — STATEMENT (Word-by-word reveal)
+   ========================================================================== */
+.statement-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--asphalt);
+  padding: 80px 48px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.statement-container {
+  max-width: 1100px;
+  width: 100%;
+}
+
+.section-tag {
+  color: var(--fog);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  margin-bottom: 32px;
+  display: block;
+}
+
+.statement-sentence {
+  font-size: clamp(36px, 5.5vw, 76px);
+  color: var(--bone);
+  line-height: 1.2;
+  font-weight: 300;
+}
+
+.word-reveal {
+  opacity: 0.15;
+  transition: opacity 0.25s linear;
+  display: inline-block;
+}
+
+.word-reveal.revealed {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   SECTION 3 — DISMANTLE
+   ========================================================================== */
+.dismantle-header {
+  position: absolute;
+  top: 48px;
+  left: 48px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.dismantle-title {
+  font-size: clamp(32px, 4vw, 56px);
+  color: var(--bone);
+  margin-top: 8px;
+}
+
+.dismantle-callouts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.callout-item {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+  pointer-events: none;
+}
+
+.callout-item.is-visible {
+  opacity: 1;
+}
+
+.callout-dot {
+  position: absolute;
+  top: var(--dot-y);
+  left: var(--dot-x);
+  width: 6px;
+  height: 6px;
+  background-color: var(--xenon);
+  transform: translate(-50%, -50%);
+}
+
+.callout-line-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.callout-line {
+  stroke: var(--hairline);
+  stroke-width: 1px;
+}
+
+.callout-card {
+  position: absolute;
+  top: var(--label-y);
+  left: var(--label-x);
+  background-color: var(--graphite);
+  border: 1px solid var(--hairline);
+  padding: 16px 20px;
+  max-width: 260px;
+}
+
+.callout-tag {
+  color: var(--xenon);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.callout-desc {
+  color: var(--bone);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   SECTION 4 — LINEUP (HOVER ACCORDION)
+   ========================================================================== */
+.lineup-section {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--asphalt);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lineup-header {
+  padding: 48px 48px 24px;
+}
+
+.lineup-heading {
+  font-size: clamp(28px, 3.5vw, 48px);
+  color: var(--bone);
+  margin-top: 8px;
+}
+
+.lineup-accordion {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  min-height: calc(100vh - 140px);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Slide Base */
+.lineup-slide {
+  position: relative;
+  flex: 0 0 12vw;
+  border-right: 1px solid var(--hairline);
+  background-color: var(--asphalt);
+  overflow: hidden;
+  transition: flex-basis 0.7s var(--ease), flex-grow 0.7s var(--ease);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.lineup-slide:last-child {
+  border-right: none;
+}
+
+.lineup-slide:focus-visible {
+  border-color: var(--xenon);
+}
+
+/* Open Slide Expansion */
+.lineup-slide.is-open {
+  flex: 1 1 52vw;
+  cursor: default;
+}
+
+/* Closed View State */
+.slide-closed-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 0;
+  opacity: 1;
+  transition: opacity 0.4s var(--ease);
+  z-index: 5;
+}
+
+.lineup-slide.is-open .slide-closed-view {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.slide-num {
+  color: var(--fog);
+  font-size: 11px;
+}
+
+.slide-vertical-name {
+  color: var(--bone);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  margin-top: 40px;
+}
+
+.slide-preview-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+}
+
+.slide-crop-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 85% 50%; /* Positioned on front light bar */
+  filter: grayscale(1) brightness(0.25);
+  transition: filter 0.4s var(--ease);
+}
+
+/* Open View State */
+.slide-open-view {
+  position: absolute;
+  inset: 0;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s var(--ease) 0.1s, visibility 0.5s;
+  z-index: 10;
+}
+
+.lineup-slide.is-open .slide-open-view {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Text reveals line by line with 0.06s stagger */
+.slide-open-view .slide-top-meta,
+.slide-open-view .slide-desc,
+.slide-open-view .slide-specs,
+.slide-open-view .slide-bottom-bar {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+
+.lineup-slide.is-open .slide-open-view .slide-top-meta {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.20s;
+}
+
+.lineup-slide.is-open .slide-open-view .slide-desc {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.26s; /* +0.06s */
+}
+
+.lineup-slide.is-open .slide-open-view .slide-specs {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.32s; /* +0.06s */
+}
+
+.lineup-slide.is-open .slide-open-view .slide-bottom-bar {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.38s; /* +0.06s */
+}
+
+.slide-top-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-model-name {
+  font-size: clamp(36px, 5vw, 64px);
+  color: var(--bone);
+  font-weight: 300;
+}
+
+/* Shared Floor Line at 72% height */
+.slide-car-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.slide-full-car {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center 72%;
+  transform: translateX(-6%);
+  transition: transform 0.7s var(--ease), opacity 0.7s var(--ease);
+}
+
+.lineup-slide.is-open .slide-full-car {
+  transform: translateX(0);
+}
+
+.slide-details {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 600px;
+}
+
+.slide-desc {
+  color: var(--bone);
+  font-size: 15px;
+}
+
+.slide-specs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  padding: 16px 0;
+}
+
+.spec-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spec-val {
+  color: var(--bone);
+  font-size: 14px;
+}
+
+.spec-lbl {
+  color: var(--fog);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.slide-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.swatches-row {
+  display: flex;
+  gap: 12px;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  background-color: var(--swatch-color);
+  border: 1px solid transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.swatch.is-active {
+  border-color: var(--bone); /* 1px bone outline */
+}
+
+.slide-configure-link {
+  color: var(--xenon);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--xenon);
+  transition: opacity 0.2s var(--ease);
+}
+
+.slide-configure-link:hover {
+  opacity: 0.7;
+}
+
+/* Lineup Section Scroll Entrance: slides rise 40px and fade in */
+.lineup-slide {
+  transform: translateY(40px);
+  opacity: 0;
+  transition: transform 0.8s var(--ease), opacity 0.8s var(--ease), flex-basis 0.7s var(--ease), flex-grow 0.7s var(--ease);
+}
+
+.lineup-section.is-in-view .lineup-slide {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.lineup-section.is-in-view .lineup-slide:nth-child(1) { transition-delay: 0.00s; }
+.lineup-section.is-in-view .lineup-slide:nth-child(2) { transition-delay: 0.08s; }
+.lineup-section.is-in-view .lineup-slide:nth-child(3) { transition-delay: 0.16s; }
+.lineup-section.is-in-view .lineup-slide:nth-child(4) { transition-delay: 0.24s; }
+.lineup-section.is-in-view .lineup-slide:nth-child(5) { transition-delay: 0.32s; }
+
+/* ==========================================================================
+   SECTION 5 — RESERVE
+   ========================================================================== */
+.reserve-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--asphalt);
+  padding: 80px 48px;
+  text-align: center;
+}
+
+.reserve-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 720px;
+}
+
+.reserve-title {
+  font-size: clamp(44px, 7vw, 96px);
+  color: var(--bone);
+  margin-bottom: 20px;
+}
+
+.reserve-body {
+  color: var(--fog);
+  margin-bottom: 48px;
+}
+
+.reserve-btn-wrap {
+  position: relative;
+}
+
+.reserve-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 48px;
+  background-color: transparent;
+  border: 1px solid var(--xenon);
+  color: var(--xenon);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease), color 0.25s var(--ease);
+  overflow: hidden;
+}
+
+.reserve-btn-tick {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background-color: var(--taillight);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+
+.reserve-button:hover {
+  background-color: var(--xenon);
+  color: var(--asphalt);
+}
+
+.reserve-button:hover .reserve-btn-tick {
+  opacity: 1;
+}
+
+.reserve-button:focus-visible {
+  outline: 2px solid var(--xenon);
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.site-footer {
+  position: relative;
+  background-color: var(--asphalt);
+  padding: 80px 48px 48px;
+}
+
+.footer-top-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--hairline);
+}
+
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 64px;
+  margin-bottom: 64px;
+}
+
+.footer-wordmark {
+  font-size: 32px;
+  letter-spacing: 0.15em;
+  color: var(--bone);
+  display: block;
+}
+
+.footer-tagline {
+  font-size: 10px;
+  color: var(--fog);
+  margin-top: 8px;
+  letter-spacing: 0.14em;
+}
+
+.footer-links-grid {
+  display: flex;
+  gap: 80px;
+}
+
+.footer-heading {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--fog);
+  margin-bottom: 20px;
+}
+
+.footer-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-link {
+  color: var(--bone);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s var(--ease);
+}
+
+.footer-link:hover {
+  color: var(--xenon);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--hairline);
+  padding-top: 32px;
+  color: var(--fog);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.footer-bottom-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (< 768px Mobile)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .site-header {
+    padding: 24px;
+  }
+  
+  .nav-links {
+    gap: 20px;
+  }
+
+  .hero-hud {
+    left: 24px;
+  }
+
+  .hero-chapter {
+    left: 24px;
+    right: 24px;
+    top: 10vh;
+  }
+
+  .statement-section,
+  .reserve-section,
+  .site-footer {
+    padding: 64px 24px;
+  }
+
+  .footer-container {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .footer-links-grid {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .footer-bottom-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Mobile Lineup: stack slides vertically as 72px rows */
+  .lineup-accordion {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .lineup-slide {
+    flex: 0 0 72px;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .lineup-slide.is-open {
+    flex: 0 0 auto;
+    min-height: 480px;
+  }
+
+  .slide-closed-view {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+
+  .slide-vertical-name {
+    writing-mode: horizontal-tb;
+    transform: none;
+    margin-top: 0;
+  }
+
+  .slide-preview-box {
+    display: none;
+  }
+
+  .slide-open-view {
+    padding: 24px;
+    position: relative;
+    height: auto;
+  }
+
+  .slide-car-stage {
+    position: relative;
+    height: 240px;
+    margin: 20px 0;
+  }
+
+  .slide-full-car {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY: PREFERS-REDUCED-MOTION
+   No sticky pinning, static keyframes, clean fades, standard cursor
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .hero-wrapper,
+  .dismantle-wrapper {
+    height: auto;
+  }
+
+  .scrolly-stage {
+    position: relative;
+    height: 80vh;
+  }
+
+  .hero-chapters {
+    position: relative;
+    padding: 40px 0;
+  }
+
+  .hero-chapter {
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-bottom: 48px;
+    pointer-events: auto !important;
+  }
+
+  .cursor-headlight {
+    display: none !important;
+  }
+
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

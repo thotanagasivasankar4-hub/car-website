@@ -1,0 +1,7 @@
+# Raw extraction frames (assets/frames/ contains the optimized WebP sequences used by the site)
+frames/
+scratch_inspect/
+__pycache__/
+*.pyc
+.system_generated/
+*.tmp
